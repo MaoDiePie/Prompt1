@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia de Cultura General</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --secondary: #f39c12;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --bg: #f4f7f6;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #quiz-container {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .question-number {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        h2 { margin-bottom: 20px; font-size: 1.4rem; }
+
+        .options-container {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #f0f7ff;
+        }
+
+        /* Colores de validación */
+        .correct {
+            background-color: var(--success) !important;
+            color: white !important;
+            border-color: var(--success) !important;
+        }
+
+        .incorrect {
+            background-color: var(--error) !important;
+            color: white !important;
+            border-color: var(--error) !important;
+        }
+
+        #next-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: none; /* Oculto hasta que se responda */
+            margin: 0 auto;
+        }
+
+        #next-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        .result-screen h1 { color: var(--primary); }
+        .score { font-size: 3rem; font-weight: bold; margin: 10px 0; }
+        .feedback { font-style: italic; color: #555; margin-bottom: 20px; }
+
+        .restart-btn {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container" class="animate__animated animate__fadeIn">
+    </div>
+
+<script>
+    const quizData = [
+        { q: "¿Cuál es el elemento químico más abundante en el universo?", a: "Hidrógeno", options: ["Oxígeno", "Hidrógeno", "Nitrógeno", "Carbono"] },
+        { q: "¿En qué año llegó el hombre a la Luna?", a: "1969", options: ["1965", "1969", "1972", "1958"] },
+        { q: "¿Cuál es el río más largo del mundo?", a: "Amazonas", options: ["Nilo", "Misisipi", "Amazonas", "Yangtsé"] },
+        { q: "¿Quién pintó 'La última cena'?", a: "Leonardo da Vinci", options: ["Picasso", "Miguel Ángel", "Leonardo da Vinci", "Dalí"] },
+        { q: "¿Cuál es el país más grande del mundo por territorio?", a: "Rusia", options: ["Canadá", "China", "Rusia", "EE.UU."] },
+        { q: "¿Qué órgano del cuerpo humano produce la insulina?", a: "Páncreas", options: ["Hígado", "Páncreas", "Riñón", "Corazón"] },
+        { q: "¿Cuál es la capital de Italia?", a: "Roma", options: ["Venecia", "Roma", "Milán", "Nápoles"] },
+        { q: "¿Cuántos planetas tiene el sistema solar?", a: "8", options: ["7", "8", "9", "10"] },
+        { q: "¿Quién escribió 'Don Quijote de la Mancha'?", a: "Miguel de Cervantes", options: ["Lope de Vega", "Gabriel García Márquez", "Miguel de Cervantes", "Isabel Allende"] },
+        { q: "¿Cuál es el metal que es líquido a temperatura ambiente?", a: "Mercurio", options: ["Oro", "Plata", "Mercurio", "Cobre"] }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+
+    const container = document.getElementById('quiz-container');
+
+    function loadQuestion() {
+        const data = quizData[currentQuestion];
+        container.innerHTML = `
+            <div class="animate__animated animate__fadeInRight">
+                <div class="question-number">Pregunta ${currentQuestion + 1} de ${quizData.length}</div>
+                <h2>${data.q}</h2>
+                <div class="options-container">
+                    ${data.options.map(opt => `<button class="option-btn" onclick="checkAnswer(this, '${opt}')">${opt}</button>`).join('')}
+                </div>
+                <button id="next-btn" onclick="nextQuestion()" class="animate__animated animate__bounceIn">Siguiente</button>
+            </div>
+        `;
+    }
+
+    function checkAnswer(btn, selection) {
+        const correct = quizData[currentQuestion].a;
+        const allButtons = document.querySelectorAll('.option-btn');
+        
+        allButtons.forEach(b => {
+            b.disabled = true; // Deshabilitar otros clics
+            if (b.innerText === correct) b.classList.add('correct');
+        });
+
+        if (selection !== correct) {
+            btn.classList.add('incorrect');
+        } else {
+            score++;
+        }
+
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function nextQuestion() {
+        currentQuestion++;
+        if (currentQuestion < quizData.length) {
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        let feedback = "";
+        if (score === 10) feedback = "¡Excelente! Eres un genio de la cultura general.";
+        else if (score >= 7) feedback = "¡Muy bien! Tienes conocimientos muy sólidos.";
+        else if (score >= 5) feedback = "¡Buen esfuerzo! Pero puedes mejorar.";
+        else feedback = "¡Sigue estudiando! La curiosidad es el primer paso al éxito.";
+
+        container.innerHTML = `
+            <div class="result-screen animate__animated animate__zoomIn">
+                <h1>¡Trivia Finalizada!</h1>
+                <div class="score">${score} / ${quizData.length}</div>
+                <p class="feedback">${feedback}</p>
+                <button class="restart-btn" onclick="location.reload()">Reiniciar Trivia</button>
+            </div>
+        `;
+    }
+
+    loadQuestion();
+</script>
+
+</body>
+</html>
